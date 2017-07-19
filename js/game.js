@@ -1,11 +1,11 @@
 var Game = {};
 
-Game.init = function(){
+Game.init = function() {
     game.stage.disableVisibilityChange = true;
 }
 
 Game.preload = function() {
-    game.load.spritesheet('player', 'assets/sprites/touhou.png',64,64);
+    game.load.spritesheet('player', 'assets/sprites/touhou.png', 64, 64);
     game.load.image('space', 'assets/map/space.png');
     game.load.image('bullet', 'assets/sprites/purple_ball.png');
 }
@@ -22,105 +22,91 @@ var fireRate = 200;
 
 var nextFire = 0;
 
-Game.create = function(){
+Game.create = function() {
 
-  Game.playerMap={};
+    Game.playerMap = {};
 
-  //CREATE MAP
-  var space=game.add.sprite(0,0,'space');
-  space.heigth=game.heigth;
-  space.width=game.width;
-  space.smoothed=false;
+    //CREATE MAP
+    var space = game.add.sprite(0, 0, 'space');
+    space.heigth = game.heigth;
+    space.width = game.width;
+    space.smoothed = false;
 
-  Client.askNewPlayer();
+    Client.askNewPlayer();
 
-  //CREATE PLAYER
-  //player = game.add.sprite(50,50,'player',1);
-  //game.physics.enable(player, Phaser.Physics.ARCADE);
+    //CREATE PLAYER
+    //player = game.add.sprite(50,50,'player',1);
+    //game.physics.enable(player, Phaser.Physics.ARCADE);
 
-  //CONTROLS
-  cursors = game.input.keyboard.createCursorKeys();
-  wasd = {
-  up:game.input.keyboard.addKey(Phaser.Keyboard.W),
-  down: game.input.keyboard.addKey(Phaser.Keyboard.S),
-  left: game.input.keyboard.addKey(Phaser.Keyboard.A),
-  right:game.input.keyboard.addKey(Phaser.Keyboard.D),
+    //CONTROLS
+    cursors = game.input.keyboard.createCursorKeys();
+    wasd = {
+        up: game.input.keyboard.addKey(Phaser.Keyboard.W),
+        down: game.input.keyboard.addKey(Phaser.Keyboard.S),
+        left: game.input.keyboard.addKey(Phaser.Keyboard.A),
+        right: game.input.keyboard.addKey(Phaser.Keyboard.D)
+    };
 
-};
+    //player.body.collideWorldBounds=true;
 
-
-
-  //player.body.collideWorldBounds=true;
-
-  bullets = game.add.group();
-  bullets.enableBody = true;
-  bullets.physicsBodyType = Phaser.Physics.ARCADE;
-  bullets.createMultiple(50, 'bullet');
-  bullets.setAll('checkWorldBounds', true);
-  bullets.setAll('outOfBoundsKill', true);
+    bullets = game.add.group();
+    bullets.enableBody = true;
+    bullets.physicsBodyType = Phaser.Physics.ARCADE;
+    bullets.createMultiple(50, 'bullet');
+    bullets.setAll('checkWorldBounds', true);
+    bullets.setAll('outOfBoundsKill', true);
 
 }
 
+Game.update = function() {
 
-Game.update = function(){
-
-  //player.body.velocity.set(0);
-
-  if (cursors.left.isDown || wasd.left.isDown)
-    {
-        Client.sendMove({x:-200});
+    if (cursors.left.isDown || wasd.left.isDown) {
+        Client.sendMove({x: -10});
         //player.body.velocity.x = -200;
     }
-   if (cursors.right.isDown || wasd.right.isDown)
-    {
-        Client.sendMove({x:200});
+    if (cursors.right.isDown || wasd.right.isDown) {
+        Client.sendMove({x: 10});
         //player.body.velocity.x = 200;
     }
-   if (cursors.up.isDown || wasd.up.isDown)
-    {
-        Client.sendMove({y:-200});
+    if (cursors.up.isDown || wasd.up.isDown) {
+        Client.sendMove({y: -10});
         //player.body.velocity.y = -200;
     }
-   if (cursors.down.isDown || wasd.down.isDown)
-    {
-        Client.sendMove({y:200});
+    if (cursors.down.isDown || wasd.down.isDown) {
+        Client.sendMove({y: 10});
         //player.body.velocity.y = 200;
     }
 
-    if (game.input.activePointer.isDown)
-    {
-        fire();
+    if (game.input.activePointer.isDown) {
+        //fire();
     }
 }
 
-
-Game.addNewPlayer = function(id,x,y){
-    Game.playerMap[id] = game.add.sprite(x,y,'player');
+Game.addNewPlayer = function(id, x, y) {
+    Game.playerMap[id] = game.add.sprite(x, y, 'player');
     game.physics.enable(Game.playerMap[id], Phaser.Physics.ARCADE);
-    Game.playerMap[id].body.collideWorldBounds=true;
+    Game.playerMap[id].body.collideWorldBounds = true;
 };
 
-Game.removePlayer = function(id){
+Game.removePlayer = function(id) {
     Game.playerMap[id].destroy();
     delete Game.playerMap[id];
 };
 
-Game.movePlayer=function(id,x,y){
-    Game.playerMap[id].body.velocity.set(0);
-    if(x){
-      Game.playerMap[id].body.velocity.x+=x;
-    }
-    if(y){
-      Game.playerMap[id].body.velocity.y+=y;
-    }
+Game.movePlayer = function(data) {
 
+    if (data.d.x) {
+        Game.playerMap[data.p.id].x += data.d.x;
+    }
+    if (data.d.y) {
+        Game.playerMap[data.p.id].y += data.d.y;
+    }
 
 }
 
 function fire() {
 
-    if (game.time.now > nextFire && bullets.countDead() > 0)
-    {
+    if (game.time.now > nextFire && bullets.countDead() > 0) {
         nextFire = game.time.now + fireRate;
 
         var bullet = bullets.getFirstDead();

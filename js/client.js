@@ -20,8 +20,8 @@ Client.socket.on('remove',function(id){
     Game.removePlayer(id);
 });
 
-Client.socket.on('move',function(data){
-    Game.movePlayer(data.player.id, data.x, data.y);
+Client.socket.on('move2',function(data){
+    Game.movePlayer(data);
 });
 
 Client.sendMove=function(move){

@@ -29,17 +29,18 @@ io.on('connection',function(socket){
 
         socket.on('move',function(data){
             if(data.x){
-              socket.player.x += data.x;
+              socket.player.x+=data.x;
             }
             if(data.y){
-              socket.player.y += data.y;
+              socket.player.y+=data.y;
             }
-            var nextData={
-              player:socket.player,
-              x:data.x,
-              y:data.y
-            }
-            io.emit('move', nextData);
+            console.log(data);
+            var someData={
+              p: socket.player,
+              d: data
+            };
+            console.log(someData);
+            io.emit('move2', someData);
         });
 
         socket.on('disconnect',function(){
