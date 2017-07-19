@@ -24,7 +24,7 @@ var nextFire = 0;
 
 Game.create = function() {
 
-    Game.playerMap = {};
+    Game.playerMap = [];
 
     //CREATE MAP
     var space = game.add.sprite(0, 0, 'space');
@@ -52,6 +52,7 @@ Game.create = function() {
     bullets = game.add.group();
     bullets.enableBody = true;
     bullets.physicsBodyType = Phaser.Physics.ARCADE;
+
     bullets.createMultiple(50, 'bullet');
     bullets.setAll('checkWorldBounds', true);
     bullets.setAll('outOfBoundsKill', true);
@@ -60,35 +61,23 @@ Game.create = function() {
 
 Game.update = function() {
 
+    checkCollisions();
+    //game.physics.arcade.collide(Game.playerMap, bullets, handleCollisions);
+
     if (cursors.left.isDown || wasd.left.isDown) {
         Client.sendMove({x: -10});
-        //player.body.velocity.x = -200;
     }
     if (cursors.right.isDown || wasd.right.isDown) {
         Client.sendMove({x: 10});
-        //player.body.velocity.x = 200;
     }
     if (cursors.up.isDown || wasd.up.isDown) {
         Client.sendMove({y: -10});
-        //player.body.velocity.y = -200;
     }
     if (cursors.down.isDown || wasd.down.isDown) {
         Client.sendMove({y: 10});
-        //player.body.velocity.y = 200;
     }
-
     if (game.input.activePointer.isDown) {
-      //if (game.time.now > nextFire && bullets.countDead() > 0) {
-          //nextFire = game.time.now + fireRate;
-
-          //var bullet = bullets.getFirstDead();
-
           Client.sendBullet(game.input.mousePointer.x, game.input.mousePointer.y);
-
-          //bullet.reset(player.x + 20, player.y + 30);
-
-          //game.physics.arcade.moveToPointer(bullet, 1000);
-      //}
     }
 }
 
@@ -96,6 +85,7 @@ Game.addNewPlayer = function(id, x, y) {
     Game.playerMap[id] = game.add.sprite(x, y, 'player');
     game.physics.enable(Game.playerMap[id], Phaser.Physics.ARCADE);
     Game.playerMap[id].body.collideWorldBounds = true;
+    Game.playerMap[id].enableBody=true;
 };
 
 Game.removePlayer = function(id) {
@@ -118,7 +108,80 @@ Game.shootBullet=function(data){
   if (game.time.now > nextFire && bullets.countDead() > 0) {
       nextFire = game.time.now + fireRate;
       var bullet = bullets.getFirstDead();
-      bullet.reset(Game.playerMap[data.p.id].x + 20, Game.playerMap[data.p.id].y + 30);
-      game.physics.arcade.moveToXY(bullet, data.d.x, data.d.y, 1000);
+
+      var someX;
+      var someY;
+
+
+      //if crosshair is on the bottom
+      if((Game.playerMap[data.p.id].y + Game.playerMap[data.p.id].body.height) < data.d.y){
+        //around the middle of the player
+        someX=Game.playerMap[data.p.id].x + 20;
+        //below the player
+        someY= (Game.playerMap[data.p.id].y +Game.playerMap[data.p.id].body.height + 4);
+      }
+
+      //if crosshair is on top
+      else if(Game.playerMap[data.p.id].y > data.d.y){
+        //around the middle of the player
+        someX=Game.playerMap[data.p.id].x + 20;
+        //on top of the player
+        someY= (Game.playerMap[data.p.id].y - bullet.body.height - 4 );
+      }
+
+      //if crosshair is on the left
+      else if(Game.playerMap[data.p.id].x > data.d.x){
+        //around the middle of the player
+        someY=Game.playerMap[data.p.id].y + 20;
+        //left side
+        someX= (Game.playerMap[data.p.id].x - bullet.body.width - 4 );
+      }
+
+      //if crosshair is on the right
+      else if((Game.playerMap[data.p.id].x + Game.playerMap[data.p.id].body.width) < data.d.x){
+
+        //around the middle of the player
+        someY=Game.playerMap[data.p.id].y + 20;
+        //left side
+        someX= (Game.playerMap[data.p.id].x + Game.playerMap[data.p.id].body.width + 4 );
+
+      }
+
+
+
+  if(someX && someY){
+    bullet.reset(someX, someY);
+        game.physics.arcade.moveToXY(bullet, data.d.x, data.d.y, 1000);
+
   }
+
+  }
+}
+
+function checkCollisions(){
+    bullets.forEachAlive(bullet =>{
+      Game.playerMap.forEach(player => {
+        if(check(bullet, player)){
+          bullet.kill();
+        }
+      });
+    }, this);
+}
+
+
+function check(bullet, player){
+
+    if(bullet.x > (player.x+player.body.width) || player.x > (bullet.x+bullet.body.width))
+    {
+      return false;
+    }
+
+    if(bullet.y > (player.y+player.body.height) || player.y > (bullet.y+bullet.body.height))
+    {
+      return false;
+    }
+
+    return true;
+
+
 }
