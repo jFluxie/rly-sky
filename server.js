@@ -34,13 +34,20 @@ io.on('connection',function(socket){
             if(data.y){
               socket.player.y+=data.y;
             }
-            console.log(data);
             var someData={
               p: socket.player,
               d: data
             };
-            console.log(someData);
             io.emit('move2', someData);
+        });
+
+        socket.on('bullet',function(data){
+          //SIMULATION
+          var someData={
+            p: socket.player,
+            d: data
+          };
+            io.emit('bullet2', someData);
         });
 
         socket.on('disconnect',function(){

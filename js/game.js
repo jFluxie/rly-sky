@@ -78,7 +78,17 @@ Game.update = function() {
     }
 
     if (game.input.activePointer.isDown) {
-        //fire();
+      //if (game.time.now > nextFire && bullets.countDead() > 0) {
+          //nextFire = game.time.now + fireRate;
+
+          //var bullet = bullets.getFirstDead();
+
+          Client.sendBullet(game.input.mousePointer.x, game.input.mousePointer.y);
+
+          //bullet.reset(player.x + 20, player.y + 30);
+
+          //game.physics.arcade.moveToPointer(bullet, 1000);
+      //}
     }
 }
 
@@ -104,16 +114,11 @@ Game.movePlayer = function(data) {
 
 }
 
-function fire() {
-
-    if (game.time.now > nextFire && bullets.countDead() > 0) {
-        nextFire = game.time.now + fireRate;
-
-        var bullet = bullets.getFirstDead();
-
-        bullet.reset(player.x + 20, player.y + 30);
-
-        game.physics.arcade.moveToPointer(bullet, 1000);
-    }
-
+Game.shootBullet=function(data){
+  if (game.time.now > nextFire && bullets.countDead() > 0) {
+      nextFire = game.time.now + fireRate;
+      var bullet = bullets.getFirstDead();
+      bullet.reset(Game.playerMap[data.p.id].x + 20, Game.playerMap[data.p.id].y + 30);
+      game.physics.arcade.moveToXY(bullet, data.d.x, data.d.y, 1000);
+  }
 }

@@ -24,6 +24,18 @@ Client.socket.on('move2',function(data){
     Game.movePlayer(data);
 });
 
+Client.socket.on('bullet2',function(data){
+    Game.shootBullet(data);
+});
+
 Client.sendMove=function(move){
     Client.socket.emit('move', move);
+}
+
+Client.sendBullet=function(x, y){
+    var data={
+      x:x,
+      y:y
+    };
+    Client.socket.emit('bullet', data);
 }
