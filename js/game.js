@@ -56,11 +56,11 @@ Game.create = function() {
     bullets.createMultiple(50, 'bullet');
     bullets.setAll('checkWorldBounds', true);
     bullets.setAll('outOfBoundsKill', true);
-
 }
 
 Game.update = function() {
 
+    //checkHealth();
     checkCollisions();
     //game.physics.arcade.collide(Game.playerMap, bullets, handleCollisions);
 
@@ -77,7 +77,7 @@ Game.update = function() {
         Client.sendMove({y: 10});
     }
     if (game.input.activePointer.isDown) {
-          Client.sendBullet(game.input.mousePointer.x, game.input.mousePointer.y);
+        Client.sendBullet(game.input.mousePointer.x, game.input.mousePointer.y);
     }
 }
 
@@ -85,7 +85,9 @@ Game.addNewPlayer = function(id, x, y) {
     Game.playerMap[id] = game.add.sprite(x, y, 'player');
     game.physics.enable(Game.playerMap[id], Phaser.Physics.ARCADE);
     Game.playerMap[id].body.collideWorldBounds = true;
-    Game.playerMap[id].enableBody=true;
+    Game.playerMap[id].enableBody = true;
+    Game.playerMap[id].health = 100;
+    Game.playerMap[id].id = id;
 };
 
 Game.removePlayer = function(id) {
@@ -104,84 +106,100 @@ Game.movePlayer = function(data) {
 
 }
 
-Game.shootBullet=function(data){
-  if (game.time.now > nextFire && bullets.countDead() > 0) {
-      nextFire = game.time.now + fireRate;
-      var bullet = bullets.getFirstDead();
+Game.shootBullet = function(data) {
+    if (Game.playerMap[data.p.id]) {
+        if (game.time.now > nextFire && bullets.countDead() > 0) {
+            nextFire = game.time.now + fireRate;
+            var bullet = bullets.getFirstDead();
 
-      var someX;
-      var someY;
+            var someX;
+            var someY;
 
+            if (checkIfInsideRect(data.d.x, data.d.y, Game.playerMap[data.p.id]))//if crosshair is on the bottom
+            {
+                //Do nothing
+            } else if ((Game.playerMap[data.p.id].y + Game.playerMap[data.p.id].body.height) < data.d.y) {
+                //around the middle of the player
+                someX = Game.playerMap[data.p.id].x + 20;
+                //below the player
+                someY = (Game.playerMap[data.p.id].y + Game.playerMap[data.p.id].body.height + 1//if crosshair is on top
+                );
+            } else if (Game.playerMap[data.p.id].y > data.d.y) {
+                //around the middle of the player
+                someX = Game.playerMap[data.p.id].x + 20;
+                //on top of the player
+                someY = (Game.playerMap[data.p.id].y - bullet.body.height - 1//if crosshair is on the left
+                );
+            } else if (Game.playerMap[data.p.id].x > data.d.x) {
+                //around the middle of the player
+                someY = Game.playerMap[data.p.id].y + 20;
+                //left side
+                someX = (Game.playerMap[data.p.id].x - bullet.body.width - 1//if crosshair is on the right
+                );
+            } else if ((Game.playerMap[data.p.id].x + Game.playerMap[data.p.id].body.width) < data.d.x) {
 
-      //if crosshair is on the bottom
-      if((Game.playerMap[data.p.id].y + Game.playerMap[data.p.id].body.height) < data.d.y){
-        //around the middle of the player
-        someX=Game.playerMap[data.p.id].x + 20;
-        //below the player
-        someY= (Game.playerMap[data.p.id].y +Game.playerMap[data.p.id].body.height + 4);
-      }
+                //around the middle of the player
+                someY = Game.playerMap[data.p.id].y + 20;
+                //left side
+                someX = (Game.playerMap[data.p.id].x + Game.playerMap[data.p.id].body.width + 1);
 
-      //if crosshair is on top
-      else if(Game.playerMap[data.p.id].y > data.d.y){
-        //around the middle of the player
-        someX=Game.playerMap[data.p.id].x + 20;
-        //on top of the player
-        someY= (Game.playerMap[data.p.id].y - bullet.body.height - 4 );
-      }
+            }
 
-      //if crosshair is on the left
-      else if(Game.playerMap[data.p.id].x > data.d.x){
-        //around the middle of the player
-        someY=Game.playerMap[data.p.id].y + 20;
-        //left side
-        someX= (Game.playerMap[data.p.id].x - bullet.body.width - 4 );
-      }
+            if (someX && someY) {
+                bullet.owner = data.p.id;
+                bullet.reset(someX, someY);
+                console.log(bullet);
+                game.physics.arcade.moveToXY(bullet, data.d.x, data.d.y, 1000);
 
-      //if crosshair is on the right
-      else if((Game.playerMap[data.p.id].x + Game.playerMap[data.p.id].body.width) < data.d.x){
+            }
 
-        //around the middle of the player
-        someY=Game.playerMap[data.p.id].y + 20;
-        //left side
-        someX= (Game.playerMap[data.p.id].x + Game.playerMap[data.p.id].body.width + 4 );
-
-      }
-
-
-
-  if(someX && someY){
-    bullet.reset(someX, someY);
-        game.physics.arcade.moveToXY(bullet, data.d.x, data.d.y, 1000);
-
-  }
-
-  }
+        }
+    }
 }
 
-function checkCollisions(){
-    bullets.forEachAlive(bullet =>{
-      Game.playerMap.forEach(player => {
-        if(check(bullet, player)){
-          bullet.kill();
-        }
-      });
+function checkCollisions() {
+    bullets.forEachAlive(bullet => {
+        Game.playerMap.forEach(player => {
+
+          if(player){
+            if (check(bullet, player) && bullet.owner != player.id) {
+                bullet.kill();
+                player.damage(50);
+
+                if(!player.alive){
+                  player.destroy();
+                  delete Game.playerMap[player.id];
+                }
+          }
+
+          }
+        });
     }, this);
 }
 
+function checkHealth() {
+    Game.playerMap.forEach(player => {
+      console.log(player.id +" and "+player.alive);
+        if (!player.alive) {
+            player.destroy();
+        }
+    });
+}
 
-function check(bullet, player){
+function check(bullet, player) {
 
-    if(bullet.x > (player.x+player.body.width) || player.x > (bullet.x+bullet.body.width))
-    {
-      return false;
+    if (bullet.x > (player.x + player.body.width ) || (player.x ) > (bullet.x + bullet.body.width)) {
+        return false;
     }
 
-    if(bullet.y > (player.y+player.body.height) || player.y > (bullet.y+bullet.body.height))
-    {
-      return false;
+    if (bullet.y > (player.y + player.body.height ) || (player.y ) > (bullet.y + bullet.body.height)) {
+        return false;
     }
 
     return true;
 
+}
 
+function checkIfInsideRect(x, y, sprite) {
+    return x >= sprite.x && x <= (sprite.x + sprite.body.width) && y >= sprite.y && y <= (sprite.y + sprite.body.height);
 }
