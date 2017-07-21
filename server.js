@@ -28,6 +28,9 @@ io.on('connection',function(socket){
         socket.broadcast.emit('newplayer',socket.player);
 
         socket.on('move',function(data){
+          //check if there are any collisions
+          if(checkBoundaries(socket.player, data) && thereAreNoCollisions(socket.player, data)){
+
             if(data.x){
               socket.player.x+=data.x;
             }
@@ -39,6 +42,14 @@ io.on('connection',function(socket){
               d: data
             };
             io.emit('move2', someData);
+          }
+          else{
+          }
+        });
+
+        socket.on('resolution',function(data){
+            socket.player.width=data.width;
+            socket.player.height=data.height;
         });
 
         socket.on('bullet',function(data){
@@ -67,4 +78,63 @@ function getAllPlayers(){
 
 function randomInt (low, high) {
     return Math.floor(Math.random() * (high - low) + low);
+}
+
+function thereAreNoCollisions(playerCheck, data){
+  var players=getAllPlayers();
+  for(var i=0;i<players.length;i++){
+    if(players[i].id!==playerCheck.id){
+        if(check(players[i],playerCheck, data)){
+           return false;
+        }
+    }
+  }
+  return true;
+}
+
+function check(bullet, player, data) {
+
+    var someX=0;
+    var someY=0;
+
+    if(data.x){
+      someX=data.x;
+    }
+    if(data.y){
+      someY=data.y;
+    }
+    console.log("Posicion actual : "+player.x+" ,"+player.y);
+    console.log("Posicion a moverse : "+(player.x+someX)+" ,"+(player.y+someY));
+    console.log("Posicion del otro man : "+(bullet.x)+" ,"+(bullet.y));
+    console.log('\n');
+
+    if (bullet.x > (player.x + 64 + someX) || (player.x + someX) > (bullet.x + 64)) {
+        return false;
+    }
+
+    if (bullet.y > (player.y + 64 +someY) || (player.y +someY) > (bullet.y + 64)) {
+        return false;
+    }
+
+    return true;
+
+}
+
+function checkBoundaries(player, data){
+  var someX=0;
+  var someY=0;
+
+  if(data.x){
+    someX=data.x;
+  }
+  if(data.y){
+    someY=data.y;
+  }
+
+  if((0<= (player.x+someX)) && ((player.x+someX+64) <=player.width) &&  0<= (player.y+someY) && ((player.y+someY+64) <=player.height)){
+    return true;
+  }
+  else{
+    return false;
+  }
 }

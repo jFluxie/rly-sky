@@ -22,6 +22,7 @@ var fireRate = 200;
 
 var nextFire = 0;
 
+
 Game.create = function() {
 
     Game.playerMap = [];
@@ -60,9 +61,7 @@ Game.create = function() {
 
 Game.update = function() {
 
-    //checkHealth();
     checkCollisions();
-    //game.physics.arcade.collide(Game.playerMap, bullets, handleCollisions);
 
     if (cursors.left.isDown || wasd.left.isDown) {
         Client.sendMove({x: -10});
@@ -88,6 +87,7 @@ Game.addNewPlayer = function(id, x, y) {
     Game.playerMap[id].enableBody = true;
     Game.playerMap[id].health = 100;
     Game.playerMap[id].id = id;
+    Client.sendResolution(window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio);
 };
 
 Game.removePlayer = function(id) {
@@ -177,14 +177,6 @@ function checkCollisions() {
     }, this);
 }
 
-function checkHealth() {
-    Game.playerMap.forEach(player => {
-      console.log(player.id +" and "+player.alive);
-        if (!player.alive) {
-            player.destroy();
-        }
-    });
-}
 
 function check(bullet, player) {
 

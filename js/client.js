@@ -32,6 +32,14 @@ Client.sendMove=function(move){
     Client.socket.emit('move', move);
 }
 
+Client.sendResolution=function(width, height){
+  var data={
+    width: width,
+    height: height
+  };
+    Client.socket.emit('resolution', data);
+}
+
 Client.sendBullet=function(x, y){
     var data={
       x:x,
