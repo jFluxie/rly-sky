@@ -22,8 +22,11 @@ var fireRate = 200;
 
 var nextFire = 0;
 
+var myplayer;
+
 
 Game.create = function() {
+
 
     Game.playerMap = [];
 
@@ -59,9 +62,14 @@ Game.create = function() {
     bullets.setAll('outOfBoundsKill', true);
 }
 
+
 Game.update = function() {
 
+
+
+
     checkCollisions();
+    addHealthBars();
 
     if (cursors.left.isDown || wasd.left.isDown) {
         Client.sendMove({x: -10});
@@ -80,17 +88,41 @@ Game.update = function() {
     }
 }
 
+function addHealthBars(){
+      //Do nothing
+      Game.playerMap.forEach(player =>{
+        if(player){
+          player.healthBar.setPosition(player.x + 30 , player.y - 5);
+          if(player.health<30){
+            player.healthBar.setBarColor('#FF0000');
+          }
+          else if(player.health<60){
+            player.healthBar.setBarColor('#FFFF00');
+          }
+          else {
+            player.healthBar.setBarColor('#00FF00');
+          }
+        }
+      });
+}
+
 Game.addNewPlayer = function(id, x, y) {
     Game.playerMap[id] = game.add.sprite(x, y, 'player');
     game.physics.enable(Game.playerMap[id], Phaser.Physics.ARCADE);
     Game.playerMap[id].body.collideWorldBounds = true;
     Game.playerMap[id].enableBody = true;
+    Game.playerMap[id].maxHealth = 100;
     Game.playerMap[id].health = 100;
     Game.playerMap[id].id = id;
+
+    var barConfig = {x: Game.playerMap[id].x + 30, y: Game.playerMap[id].y - 5};
+	   Game.playerMap[id].healthBar= new HealthBar(this.game, barConfig);
+
     Client.sendResolution(window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio);
 };
 
 Game.removePlayer = function(id) {
+    Game.playerMap[id].healthBar.kill();
     Game.playerMap[id].destroy();
     delete Game.playerMap[id];
 };
@@ -164,10 +196,12 @@ function checkCollisions() {
           if(player){
             if (check(bullet, player) && bullet.owner != player.id) {
                 bullet.kill();
-                player.damage(50);
+                player.damage(10);
+                player.healthBar.setPercent((player.health/player.maxHealth)*100);
 
                 if(!player.alive){
                   player.destroy();
+                  player.healthBar.kill();
                   delete Game.playerMap[player.id];
                 }
           }
